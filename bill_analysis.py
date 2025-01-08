@@ -78,16 +78,26 @@ def analyze_group_sizes(df):
     # Group size distribution
     group_size_stats = df['Seat Amount'].describe()
     
-    # Average spend per person by group size
-    df['spend_per_person'] = df['Summary Price'] / df['Seat Amount']
-    avg_spend_by_group = df.groupby(df['Seat Amount'])\
-        .agg({
-            'spend_per_person': 'mean',
-            'Summary Price': 'mean',
-            'Receipt Number': 'count'
-        }).reset_index()
+    # Calculate total visitors and revenue per group size
+    group_analysis = df.groupby('Seat Amount').agg({
+        'Summary Price': ['mean', 'sum', 'count'],
+        'Seat Amount': 'count'
+    }).reset_index()
     
-    return group_size_stats, avg_spend_by_group
+    # Flatten column names
+    group_analysis.columns = ['group_size', 'avg_bill', 'total_revenue', 'visit_count', 'group_count']
+    
+    # Calculate total visitors per group size
+    group_analysis['total_visitors'] = group_analysis['group_size'] * group_analysis['visit_count']
+    
+    # Calculate percentage of total visitors
+    total_visitors = group_analysis['total_visitors'].sum()
+    group_analysis['visitor_percentage'] = (group_analysis['total_visitors'] / total_visitors) * 100
+    
+    # Calculate average spend per person
+    group_analysis['spend_per_person'] = group_analysis['avg_bill'] / group_analysis['group_size']
+    
+    return group_size_stats, group_analysis
 
 def analyze_dwell_time(df):
     # Calculate time difference between consecutive orders at same table
@@ -101,40 +111,114 @@ def analyze_dwell_time(df):
     return dwell_time.describe()
 
 def analyze_revenue_patterns(df):
-    # Revenue by hour of day
+    # Add time-based columns
     df['hour'] = df['datetime'].dt.hour
+    df['month'] = df['datetime'].dt.strftime('%Y-%m')
+    
+    # Revenue by hour of day
     hourly_revenue = df.groupby('hour')['Summary Price'].agg(['mean', 'count', 'sum'])
+    
+    # Monthly analysis
+    monthly_analysis = df.groupby('month').agg({
+        'Summary Price': ['count', 'sum', 'mean'],
+        'Seat Amount': ['mean', 'sum'],
+        'Receipt Number': 'count'
+    }).round(2)
+    
+    # Flatten column names
+    monthly_analysis.columns = ['transaction_count', 'total_revenue', 'avg_bill',
+                              'avg_group_size', 'total_seats', 'receipt_count']
+    
+    # Calculate month-over-month growth
+    monthly_analysis['revenue_growth'] = monthly_analysis['total_revenue'].pct_change() * 100
+    monthly_analysis['transaction_growth'] = monthly_analysis['transaction_count'].pct_change() * 100
     
     # Revenue by group size
     revenue_by_group = df.groupby('Seat Amount')['Summary Price'].agg(['mean', 'count', 'sum'])
     
-    return hourly_revenue, revenue_by_group
+    return hourly_revenue, revenue_by_group, monthly_analysis
 
-def plot_insights(df, avg_spend_by_group, hourly_revenue):
+def plot_insights(df, group_analysis, hourly_revenue, monthly_analysis):
     # Set the backend to non-interactive
     plt.switch_backend('Agg')
     
-    # Create separate figures for each plot and save them
+    # Plot 1: Group Size Distribution with Visitor Percentage
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
     
-    # Plot 1: Group Size Distribution
-    plt.figure(figsize=(8, 6))
-    sns.histplot(data=df, x='Seat Amount', bins=20)
-    plt.title('Distribution of Group Sizes')
-    plt.xlabel('Number of Customers')
-    plt.savefig('group_size_distribution.png')
+    # Raw visit counts
+    sns.histplot(data=df, x='Seat Amount', bins=20, ax=ax1)
+    ax1.set_title('Distribution of Group Sizes\n(Visit Counts)')
+    ax1.set_xlabel('Number of Customers')
+    ax1.set_ylabel('Number of Visits')
+    
+    # Visitor percentage
+    sns.barplot(data=group_analysis, x='group_size', y='visitor_percentage', ax=ax2)
+    ax2.set_title('Distribution of Total Visitors\n(% of Total Customers)')
+    ax2.set_xlabel('Group Size')
+    ax2.set_ylabel('Percentage of Total Visitors')
+    plt.tight_layout()
+    plt.savefig('group_size_analysis.png')
     plt.close()
     
-    # Plot 2: Average Spend per Person by Group Size
-    plt.figure(figsize=(8, 6))
-    sns.scatterplot(data=avg_spend_by_group, x='Seat Amount', y='spend_per_person')
-    plt.title('Average Spend per Person by Group Size')
-    plt.xlabel('Group Size')
-    plt.ylabel('Average Spend per Person')
-    plt.savefig('avg_spend_per_person.png')
+    # Plot 2: Revenue Analysis by Group Size
+    plt.figure(figsize=(10, 6))
+    ax = plt.gca()
+    
+    # Plot average spend per person
+    line1 = ax.plot(group_analysis['group_size'], 
+                   group_analysis['spend_per_person'], 
+                   marker='o', label='Spend per Person')
+    ax.set_xlabel('Group Size')
+    ax.set_ylabel('Average Spend per Person (฿)')
+    
+    # Plot total revenue on secondary y-axis
+    ax2 = ax.twinx()
+    line2 = ax2.plot(group_analysis['group_size'], 
+                    group_analysis['total_revenue'], 
+                    marker='s', color='red', label='Total Revenue')
+    ax2.set_ylabel('Total Revenue (฿)')
+    
+    # Combine legends
+    lines = line1 + line2
+    labels = [l.get_label() for l in lines]
+    ax.legend(lines, labels, loc='upper right')
+    
+    plt.title('Revenue Analysis by Group Size')
+    plt.tight_layout()
+    plt.savefig('revenue_analysis.png')
     plt.close()
     
-    # Plot 3: Revenue by Hour
-    plt.figure(figsize=(8, 6))
+    # Plot 3: Monthly Trends
+    plt.figure(figsize=(12, 6))
+    ax = plt.gca()
+    
+    # Plot total revenue
+    line1 = ax.plot(monthly_analysis.index, 
+                    monthly_analysis['total_revenue'], 
+                    marker='o', label='Total Revenue')
+    ax.set_xlabel('Month')
+    ax.set_ylabel('Total Revenue (฿)')
+    
+    # Plot average bill on secondary y-axis
+    ax2 = ax.twinx()
+    line2 = ax2.plot(monthly_analysis.index, 
+                     monthly_analysis['avg_bill'], 
+                     marker='s', color='red', label='Average Bill')
+    ax2.set_ylabel('Average Bill (฿)')
+    
+    # Combine legends
+    lines = line1 + line2
+    labels = [l.get_label() for l in lines]
+    ax.legend(lines, labels, loc='upper right')
+    
+    plt.title('Monthly Revenue Trends')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig('monthly_trends.png')
+    plt.close()
+    
+    # Plot 4: Revenue by Hour
+    plt.figure(figsize=(10, 6))
     hourly_revenue['sum'].plot(kind='bar')
     plt.title('Total Revenue by Hour of Day')
     plt.xlabel('Hour')
@@ -142,15 +226,6 @@ def plot_insights(df, avg_spend_by_group, hourly_revenue):
     plt.xticks(rotation=45)
     plt.tight_layout()
     plt.savefig('revenue_by_hour.png')
-    plt.close()
-    
-    # Plot 4: Average Bill Amount by Group Size
-    plt.figure(figsize=(8, 6))
-    sns.scatterplot(data=avg_spend_by_group, x='Seat Amount', y='Summary Price')
-    plt.title('Average Bill Amount by Group Size')
-    plt.xlabel('Group Size')
-    plt.ylabel('Average Bill Amount')
-    plt.savefig('bill_amount_by_group.png')
     plt.close()
     
     print("\nPlots have been saved as PNG files in the current directory.")
@@ -182,9 +257,9 @@ def main():
         df = load_and_clean_data(os.path.join(original_dir, args.data_path))
         
         # Perform analyses
-        group_size_stats, avg_spend_by_group = analyze_group_sizes(df)
+        group_size_stats, group_analysis = analyze_group_sizes(df)
         dwell_time_stats = analyze_dwell_time(df)
-        hourly_revenue, revenue_by_group = analyze_revenue_patterns(df)
+        hourly_revenue, revenue_by_group, monthly_analysis = analyze_revenue_patterns(df)
         
         # Save detailed analysis to a text file
         with open('analysis_results.txt', 'w', encoding='utf-8') as f:
@@ -218,16 +293,29 @@ def main():
                 f.write(f"Hour {hour:02f}:00: ฿{peak_hours.loc[hour, 'sum']:,.2f} ")
                 f.write(f"(avg ฿{peak_hours.loc[hour, 'mean']:,.2f} per bill)\n")
         
+            # Add monthly analysis to the report
+            f.write("\n=== Monthly Trends ===\n")
+            f.write("\nRevenue trends by month:\n")
+            for month, row in monthly_analysis.iterrows():
+                f.write(f"\n{month}:\n")
+                f.write(f"  Total Revenue: ฿{row['total_revenue']:,.2f}\n")
+                f.write(f"  Average Bill: ฿{row['avg_bill']:,.2f}\n")
+                f.write(f"  Number of Transactions: {row['transaction_count']:,}\n")
+                if not pd.isna(row['revenue_growth']):
+                    f.write(f"  Revenue Growth: {row['revenue_growth']:+.1f}%\n")
+                if not pd.isna(row['transaction_growth']):
+                    f.write(f"  Transaction Growth: {row['transaction_growth']:+.1f}%\n")
+
         # Generate and save plots
-        plot_insights(df, avg_spend_by_group, hourly_revenue)
+        plot_insights(df, group_analysis, hourly_revenue, monthly_analysis)
         
         print(f"\nAnalysis complete! Results have been saved to {args.output}/")
         print("Generated files:")
         print("- analysis_results.txt (Detailed analysis)")
-        print("- group_size_distribution.png")
-        print("- avg_spend_per_person.png")
-        print("- revenue_by_hour.png")
-        print("- bill_amount_by_group.png")
+        print("- group_size_analysis.png (Distribution and normalized visitor counts)")
+        print("- revenue_analysis.png (Revenue metrics by group size)")
+        print("- monthly_trends.png (Revenue trends over time)")
+        print("- revenue_by_hour.png (Hourly revenue distribution)")
         
     finally:
         # Change back to original directory
