@@ -1,0 +1,18 @@
+2025-01-19 18:53:14,071 - INFO - Found 3 CSV files
+2025-01-19 18:53:14,078 - INFO - Processing: detail_bill_dec.csv
+2025-01-19 18:53:14,122 - INFO - Removed 4 duplicate records
+2025-01-19 18:53:14,123 - INFO - Successfully processed 4,459 records from detail_bill_dec.csv
+2025-01-19 18:53:14,124 - INFO - Processing: detail_bill_nov.csv
+2025-01-19 18:53:14,167 - INFO - Successfully processed 3,346 records from detail_bill_nov.csv
+2025-01-19 18:53:14,168 - INFO - Processing: detail_bill_oct.csv
+2025-01-19 18:53:14,208 - INFO - Removed 3 duplicate records
+2025-01-19 18:53:14,209 - INFO - Successfully processed 4,649 records from detail_bill_oct.csv
+2025-01-19 18:53:14,214 - INFO - Total records loaded: 12,454
+2025-01-19 18:53:14,216 - INFO - Writing 12,454 records to database
+2025-01-19 18:53:14,311 - INFO - Creating menu summary table...
+2025-01-19 18:53:14,322 - INFO - Creating monthly summary table...
+2025-01-19 18:53:14,434 - INFO - 
+Ingestion complete!
+2025-01-19 18:53:14,435 - INFO - Unique menu items: 0
+2025-01-19 18:53:14,435 - INFO - Menu categories: 12
+2025-01-19 18:53:14,435 - INFO - Date range: 2024-10-01 12:49:00 to 2024-12-31 21:06:00

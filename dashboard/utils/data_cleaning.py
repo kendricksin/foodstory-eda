@@ -1,4 +1,4 @@
-# foodstory-eda/src/utils/data_cleaning.py
+# foodstory-eda/dashboard/utils/data_cleaning.py
 """
 Utility functions for cleaning and preprocessing restaurant sales data.
 """

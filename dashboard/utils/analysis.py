@@ -1,9 +1,9 @@
-"""
-Analysis functions for sales and menu data.
-"""
+# foodstory-eda/dashboard/utils/analysis.py
+
 from typing import Dict, Tuple, List
 import pandas as pd
 from datetime import datetime, timedelta
+import streamlit as st
 
 def calculate_key_metrics(df: pd.DataFrame) -> Dict[str, float]:
     """
@@ -56,34 +56,37 @@ def analyze_time_patterns(df: pd.DataFrame,
     
     return result
 
-def analyze_menu_performance(df: pd.DataFrame,
-                           min_orders: int = 10) -> pd.DataFrame:
+def analyze_menu_performance(df: pd.DataFrame, min_orders: int = 5) -> pd.DataFrame:
     """
-    Analyze performance metrics for menu items.
-    
-    Args:
-        df: Menu sales DataFrame
-        min_orders: Minimum number of orders for inclusion
+    Analyze performance metrics for menu items with improved error handling.
+    """
+    try:
+        # Ensure numeric columns
+        df['quantity'] = pd.to_numeric(df['quantity'], errors='coerce').fillna(0)
+        df['revenue'] = pd.to_numeric(df['revenue'], errors='coerce').fillna(0)
+        df['discount_amount'] = pd.to_numeric(df['discount_amount'], errors='coerce').fillna(0)
         
-    Returns:
-        DataFrame with menu performance metrics
-    """
-    metrics = df.groupby(['menu_code', 'menu_name', 'category']).agg({
-        'quantity': 'sum',
-        'revenue': 'sum',
-        'discount_amount': 'sum',
-        'receipt_number': 'nunique'
-    }).reset_index()
-    
-    # Filter by minimum orders
-    metrics = metrics[metrics['receipt_number'] >= min_orders]
-    
-    # Calculate additional metrics
-    metrics['avg_price'] = metrics['revenue'] / metrics['quantity']
-    metrics['revenue_share'] = metrics['revenue'] / metrics['revenue'].sum() * 100
-    metrics['discount_rate'] = metrics['discount_amount'] / metrics['revenue'] * 100
-    
-    return metrics
+        # Group by menu items
+        metrics = df.groupby(['menu_code', 'menu_name', 'category']).agg({
+            'quantity': 'sum',
+            'revenue': 'sum',
+            'discount_amount': 'sum',
+            'receipt_number': 'nunique'
+        }).reset_index()
+        
+        # Filter by minimum orders
+        metrics = metrics[metrics['receipt_number'] >= min_orders]
+        
+        # Calculate additional metrics
+        metrics['avg_price'] = metrics['revenue'] / metrics['quantity'].where(metrics['quantity'] > 0, 1)
+        total_revenue = metrics['revenue'].sum()
+        metrics['revenue_share'] = (metrics['revenue'] / total_revenue * 100) if total_revenue > 0 else 0
+        metrics['discount_rate'] = (metrics['discount_amount'] / metrics['revenue'] * 100).where(metrics['revenue'] > 0, 0)
+        
+        return metrics
+    except Exception as e:
+        st.error(f"Error in menu performance analysis: {str(e)}")
+        return pd.DataFrame()
 
 def analyze_category_trends(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -171,8 +174,19 @@ def analyze_discounts(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         DataFrame with discount analysis
     """
-    return df.groupby(['category', 'menu_name']).agg({
-        'discount_amount': ['sum', 'mean'],
-        'revenue': 'sum',
-        'quantity': 'sum'
-    }).round(2)
+    # Filter for items with discounts
+    discount_data = df[df['discount_amount'] > 0]
+    
+    if not discount_data.empty:
+        summary = discount_data.groupby(['category', 'menu_name']).agg({
+            'discount_amount': ['sum', 'mean'],
+            'revenue': 'sum',
+            'quantity': 'sum'
+        })
+        
+        # Add discount rate calculation
+        summary['discount_rate'] = (summary[('discount_amount', 'sum')] / 
+                                  summary['revenue'] * 100)
+        
+        return summary
+    return pd.DataFrame()

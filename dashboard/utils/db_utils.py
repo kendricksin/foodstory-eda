@@ -1,7 +1,5 @@
-# foodstory-eda/src/utils/db_utils.py
-"""
-Utility functions for database operations.
-"""
+# foodstory-eda/src/dashboard/db_utils.py
+
 import sqlite3
 import pandas as pd
 import logging

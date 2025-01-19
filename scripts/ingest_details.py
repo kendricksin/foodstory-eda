@@ -1,6 +1,5 @@
-"""
-Script to ingest detailed bill item data into SQLite database.
-"""
+# foodstory-eda/dashboard/scripts/ingest_details.py
+
 import sys
 import os
 from pathlib import Path

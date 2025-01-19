@@ -1,6 +1,5 @@
-"""
-Configuration settings for the dashboard application.
-"""
+# foodstory-eda/dashboard/config.py
+
 from pathlib import Path
 
 # Database settings

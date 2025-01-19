@@ -1,6 +1,5 @@
-"""
-Main entry point for the Streamlit dashboard application.
-"""
+# foodstory-eda/dashboard/app.py
+
 import streamlit as st
 from pathlib import Path
 from utils.data_loader import get_date_range

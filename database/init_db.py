@@ -1,6 +1,5 @@
-"""
-Script to initialize the SQLite database schema.
-"""
+# foodstory-eda/dashboard/database/init_db.py
+
 import sqlite3
 from pathlib import Path
 import logging

@@ -1,11 +1,11 @@
-"""
-Menu Analysis Dashboard Page
-"""
+# foodstory-eda/dashboard/pages/2_menu_analysis.py
+
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import pandas as pd
+import sqlite3
 
 from utils.data_loader import (
     load_menu_data,
@@ -53,33 +53,44 @@ def load_filtered_menu_data(start_date, end_date, category):
 
 df = load_filtered_menu_data(date_range[0], date_range[1], selected_category)
 
+# Logging raw data issues
+# st.write("Debug: Raw data shape:", df.shape)
+# st.write("Debug: Data columns:", df.columns.tolist())
+# st.write("Debug: Non-null counts:\n", df.info())
+
 # Top-level metrics
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
+    total_items = float(df['quantity'].sum())
+    avg_items = float(df['quantity'].mean())
     st.metric(
         "Total Items Sold",
-        f"{df['quantity'].sum():,.0f}",
-        f"{df['quantity'].mean():.1f} avg per order"
+        f"{total_items:,.0f}",
+        f"{avg_items:.1f} avg per order"
     )
 
 with col2:
+    total_revenue = float(df['revenue'].sum())
+    avg_revenue = float(df['revenue'].mean())
     st.metric(
         "Total Revenue",
-        f"฿{df['revenue'].sum():,.0f}",
-        f"฿{df['revenue'].mean():,.0f} avg per item"
+        f"฿{total_revenue:,.0f}",
+        f"฿{avg_revenue:,.0f} avg per item"
     )
 
 with col3:
+    unique_items = int(df['menu_code'].nunique())
+    unique_cats = int(df['category'].nunique())
     st.metric(
         "Unique Items",
-        f"{df['menu_code'].nunique():,}",
-        f"{df['category'].nunique()} categories"
+        f"{unique_items:,}",
+        f"{unique_cats} categories"
     )
 
 with col4:
-    total_discount = df['discount_amount'].sum()
-    discount_rate = (total_discount / df['revenue'].sum()) * 100
+    total_discount = float(df['discount_amount'].sum())
+    discount_rate = (total_discount / total_revenue * 100) if total_revenue > 0 else 0
     st.metric(
         "Total Discounts",
         f"฿{total_discount:,.0f}",
@@ -88,6 +99,11 @@ with col4:
 
 # Menu Performance Analysis
 st.header("Menu Performance Analysis")
+
+# Logging Menu issues
+# menu_perf = analyze_menu_performance(df)
+# st.write("Debug: Menu performance shape:", menu_perf.shape)
+# st.write("Debug: Menu performance columns:", menu_perf.columns.tolist())
 
 tab1, tab2, tab3 = st.tabs(["Top Items", "Category Analysis", "Trend Analysis"])
 
@@ -143,7 +159,11 @@ with tab1:
 with tab2:
     # Load category summary
     cat_summary = load_category_summary()
-    
+
+    # Logging category summary
+    # st.write("Debug: Category summary shape:", cat_summary.shape)
+    # st.write("Debug: Category summary columns:", cat_summary.columns.tolist())
+
     # Create treemap
     fig = px.treemap(
         cat_summary,

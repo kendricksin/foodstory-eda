@@ -1,6 +1,5 @@
-"""
-Sales Overview Dashboard Page
-"""
+# foodstory-eda/dashboard/pages/1_sales_overview.py
+
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
@@ -143,17 +142,18 @@ with tab2:
     # Time distribution analysis
     time_patterns = analyze_time_patterns(df, time_period.lower())
     time_patterns = time_patterns.reset_index()
+    time_patterns.columns = ['period', 'transaction_count', 'total_revenue', 'avg_bill', 'avg_group_size']
     
     fig = go.Figure()
     fig.add_trace(go.Bar(
-        x=time_patterns['index'],
-        y=time_patterns[('summary_price', 'sum')],
+        x=time_patterns['period'],
+        y=time_patterns['total_revenue'],
         name='Total Revenue',
         marker_color='#2E86C1'
     ))
     fig.add_trace(go.Scatter(
-        x=time_patterns['index'],
-        y=time_patterns[('summary_price', 'mean')],
+        x=time_patterns['period'],
+        y=time_patterns['avg_bill'],
         name='Average Bill',
         yaxis='y2',
         line=dict(color='#E67E22')
