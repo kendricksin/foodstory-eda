@@ -1,0 +1,47 @@
+2025-01-19 18:38:07,652 - INFO - Found 5 CSV files
+2025-01-19 18:38:07,654 - INFO - Processing: bills_aug_oct.csv
+2025-01-19 18:38:07,716 - WARNING - Found 1 invalid group sizes
+2025-01-19 18:38:07,720 - INFO - Successfully processed 1,997 records from bills_aug_oct.csv
+2025-01-19 18:38:07,721 - INFO - Processing: bills_dec.csv
+2025-01-19 18:38:07,754 - WARNING - Found 1 invalid group sizes
+2025-01-19 18:38:07,756 - INFO - Successfully processed 635 records from bills_dec.csv
+2025-01-19 18:38:07,757 - INFO - Processing: bills_feb_apr.csv
+2025-01-19 18:38:07,801 - WARNING - Found 3 invalid group sizes
+2025-01-19 18:38:07,806 - INFO - Successfully processed 1,893 records from bills_feb_apr.csv
+2025-01-19 18:38:07,807 - INFO - Processing: bills_may_july.csv
+2025-01-19 18:38:07,847 - WARNING - Found 3 invalid group sizes
+2025-01-19 18:38:07,850 - INFO - Successfully processed 1,893 records from bills_may_july.csv
+2025-01-19 18:38:07,850 - INFO - Processing: bills_nov.csv
+2025-01-19 18:38:07,877 - WARNING - Found 1 invalid group sizes
+2025-01-19 18:38:07,880 - INFO - Successfully processed 527 records from bills_nov.csv
+2025-01-19 18:38:07,959 - INFO - Successfully wrote 6,945 rows to sales
+2025-01-19 18:38:07,981 - ERROR - Error creating index on table: near "table": syntax error
+2025-01-19 18:38:07,982 - ERROR - Error updating database: near "table": syntax error
+2025-01-19 18:38:07,982 - ERROR - near "table": syntax error
+2025-01-19 18:41:18,379 - INFO - Found 5 CSV files
+2025-01-19 18:41:18,380 - INFO - Processing: bills_aug_oct.csv
+2025-01-19 18:41:18,407 - WARNING - Found 1 invalid group sizes
+2025-01-19 18:41:18,410 - INFO - Successfully processed 1,997 records from bills_aug_oct.csv
+2025-01-19 18:41:18,410 - INFO - Processing: bills_dec.csv
+2025-01-19 18:41:18,422 - WARNING - Found 1 invalid group sizes
+2025-01-19 18:41:18,424 - INFO - Successfully processed 635 records from bills_dec.csv
+2025-01-19 18:41:18,424 - INFO - Processing: bills_feb_apr.csv
+2025-01-19 18:41:18,448 - WARNING - Found 3 invalid group sizes
+2025-01-19 18:41:18,450 - INFO - Successfully processed 1,893 records from bills_feb_apr.csv
+2025-01-19 18:41:18,451 - INFO - Processing: bills_may_july.csv
+2025-01-19 18:41:18,475 - WARNING - Found 3 invalid group sizes
+2025-01-19 18:41:18,478 - INFO - Successfully processed 1,893 records from bills_may_july.csv
+2025-01-19 18:41:18,479 - INFO - Processing: bills_nov.csv
+2025-01-19 18:41:18,489 - WARNING - Found 1 invalid group sizes
+2025-01-19 18:41:18,490 - INFO - Successfully processed 527 records from bills_nov.csv
+2025-01-19 18:41:18,494 - INFO - Total records loaded: 6,945
+2025-01-19 18:41:18,497 - INFO - Writing 6,945 records to database
+2025-01-19 18:41:18,583 - INFO - 
+Ingestion complete!
+2025-01-19 18:41:18,584 - INFO - Total rows: 6,945
+2025-01-19 18:41:18,584 - INFO - Unique receipts: 5,048
+2025-01-19 18:41:18,584 - INFO - Date range: 2024-05-01 12:39:00 to 2024-12-31 21:06:00
+2025-01-19 18:41:29,297 - INFO - Found 1 CSV files
+2025-01-19 18:41:29,297 - INFO - Processing: detail_bill_dec.csv
+2025-01-19 18:41:29,315 - ERROR - Error processing data\details\detail_bill_dec.csv: Missing required columns: {'Seat Amount'}
+2025-01-19 18:41:29,316 - ERROR - Error: No valid data was processed from any files

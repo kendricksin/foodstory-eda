@@ -1,0 +1,27 @@
+restaurant_analytics/
+├── README.md
+├── requirements.txt
+├── .gitignore
+│
+├── data/                    # Raw data directory
+│   ├── bills/              # Single bill data
+│   └── details/            # Detailed bill items
+│
+├── database/               # Database related files
+│   └── restaurant_sales.db
+│
+├── scripts/                # Data ingestion scripts
+│   ├── ingest_bills.py
+│   └── ingest_details.py
+│
+└── dashboard/             # Streamlit application
+    ├── app.py            # Main entry point
+    ├── config.py         # Configuration and constants
+    ├── utils/
+    │   ├── __init__.py
+    │   ├── data_loader.py   # Database loading functions
+    │   └── analysis.py      # Analysis functions for both pages
+    │
+    └── pages/
+        ├── 1_sales_overview.py
+        └── 2_menu_analysis.py
