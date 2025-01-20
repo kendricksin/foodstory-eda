@@ -17,8 +17,7 @@ from utils.data_loader import (
 from utils.analysis import (
     analyze_menu_performance,
     analyze_category_trends,
-    find_top_combinations,
-    analyze_discounts
+    analyze_menu_combinations
 )
 
 # Page config
@@ -238,61 +237,92 @@ with tab3:
 # Menu Combinations Analysis
 st.header("Menu Combinations Analysis")
 
-# Find popular combinations
-combinations = find_top_combinations(df)
-combinations = combinations.sort_values('count', ascending=False).head(20)
+# Get combination matrices
+top_vs_top, top_vs_bottom, bottom_vs_bottom = analyze_menu_combinations(df)
 
-fig = go.Figure(data=[
-    go.Bar(
-        x=[f"{row['item1']} + {row['item2']}" for _, row in combinations.iterrows()],
-        y=combinations['count'],
-        marker_color='#2E86C1'
-    )
+# Create tabs for different matrices
+tab1, tab2, tab3 = st.tabs([
+    "Top 20 vs Top 20",
+    "Top 20 vs Bottom 20",
+    "Bottom 20 vs Bottom 20"
 ])
 
-fig.update_layout(
-    title='Top Menu Item Combinations',
-    xaxis_title='Combination',
-    yaxis_title='Number of Orders',
-    height=500
-)
-fig.update_xaxes(tickangle=45)
-st.plotly_chart(fig, use_container_width=True)
-
-# Discount Analysis
-st.header("Discount Analysis")
-col1, col2 = st.columns(2)
-
-with col1:
-    # Distribution of discount rates
-    discount_data = df[df['discount_amount'] > 0]
-    if not discount_data.empty:
-        fig = px.histogram(
-            discount_data,
-            x=discount_data['discount_amount'] / discount_data['revenue'] * 100,
-            nbins=30,
-            title='Distribution of Discount Rates',
-            labels={'x': 'Discount Rate (%)', 'y': 'Count'}
+def plot_heatmap(matrix, title):
+    """Helper function to plot heatmap with consistent styling"""
+    fig = go.Figure(data=go.Heatmap(
+        z=matrix.values,
+        x=matrix.columns,
+        y=matrix.index,
+        colorscale='Blues',
+        hoverongaps=False,
+        hovertemplate='%{y} + %{x}<br>Orders: %{z}<extra></extra>'
+    ))
+    
+    fig.update_layout(
+        title=title,
+        height=800,
+        xaxis=dict(
+            tickangle=45,
+            title='Second Item'
+        ),
+        yaxis=dict(
+            title='First Item'
         )
-        st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.info("No discount data available for the selected period")
+    )
+    
+    return fig
 
-with col2:
-    # Discount analysis by category
-    discount_by_cat = analyze_discounts(df).reset_index()
-    if not discount_by_cat.empty:
-        fig = px.bar(
-            discount_by_cat,
-            x='category',
-            y=('discount_amount', 'sum'),
-            title='Total Discounts by Category',
-            labels={'x': 'Category', 'y': 'Total Discount (฿)'}
-        )
-        fig.update_xaxes(tickangle=45)
-        st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.info("No discount data available for the selected period")
+with tab1:
+    st.markdown("""
+    This heatmap shows how frequently the top 20 menu items are ordered together.
+    Darker colors indicate more frequent combinations.
+    """)
+    
+    fig = plot_heatmap(
+        top_vs_top,
+        'Combination Frequency: Top 20 Items'
+    )
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Show top combinations as text
+    st.subheader("Most Common Combinations")
+    top_combos = []
+    for i in range(len(top_vs_top.index)):
+        for j in range(i+1, len(top_vs_top.columns)):
+            count = top_vs_top.iloc[i, j]
+            if count > 0:
+                top_combos.append({
+                    'Item 1': top_vs_top.index[i],
+                    'Item 2': top_vs_top.columns[j],
+                    'Orders': int(count)
+                })
+    
+    top_combos_df = pd.DataFrame(top_combos).sort_values('Orders', ascending=False).head(10)
+    st.dataframe(top_combos_df, hide_index=True)
+
+with tab2:
+    st.markdown("""
+    This heatmap shows combinations between top 20 and bottom 20 items.
+    It can help identify if any low-performing items are frequently paired with popular items.
+    """)
+    
+    fig = plot_heatmap(
+        top_vs_bottom,
+        'Combination Frequency: Top 20 vs Bottom 20 Items'
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+with tab3:
+    st.markdown("""
+    This heatmap shows combinations among the bottom 20 items.
+    This can help identify if certain low-performing items tend to be ordered together.
+    """)
+    
+    fig = plot_heatmap(
+        bottom_vs_bottom,
+        'Combination Frequency: Bottom 20 Items'
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
 # Detailed Menu Statistics
 st.header("Detailed Menu Statistics")

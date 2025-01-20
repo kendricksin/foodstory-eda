@@ -114,35 +114,77 @@ def analyze_category_trends(df: pd.DataFrame) -> pd.DataFrame:
     
     return monthly
 
-def find_top_combinations(df: pd.DataFrame, 
-                         min_count: int = 10) -> pd.DataFrame:
+def create_combination_matrix(df, items_x, items_y):
     """
-    Find common menu item combinations in orders.
+    Create a combination matrix for specified menu items.
     
     Args:
         df: Menu sales DataFrame
-        min_count: Minimum number of occurrences
+        items_x: List of menu items for x-axis
+        items_y: List of menu items for y-axis
         
     Returns:
-        DataFrame with common combinations
+        DataFrame with combination matrix
     """
-    # Group items by receipt
-    order_items = df.groupby('receipt_number')['menu_name'].agg(list)
+    import pandas as pd
+    import numpy as np
     
-    combinations = []
-    for items in order_items:
-        for i, item1 in enumerate(items):
-            for item2 in items[i+1:]:
-                combinations.append(tuple(sorted([item1, item2])))
+    # Group orders by receipt
+    order_groups = df.groupby('receipt_number')['menu_name'].agg(set).to_dict()
     
-    # Count combinations
-    combo_counts = pd.Series(combinations).value_counts()
-    combo_df = pd.DataFrame(combo_counts[combo_counts >= min_count])
-    combo_df.columns = ['count']
-    combo_df.index = pd.MultiIndex.from_tuples(combo_df.index, 
-                                             names=['item1', 'item2'])
+    # Initialize matrix
+    matrix = pd.DataFrame(0, index=items_x, columns=items_y)
     
-    return combo_df.reset_index()
+    # Count co-occurrences
+    for items in order_groups.values():
+        for item_x in items.intersection(items_x):
+            for item_y in items.intersection(items_y):
+                matrix.loc[item_x, item_y] += 1
+    
+    return matrix
+
+def get_top_bottom_items(df, n=20):
+    """
+    Get top and bottom n menu items by revenue.
+    
+    Args:
+        df: Menu sales DataFrame
+        n: Number of items to return
+        
+    Returns:
+        tuple: (top_n_items, bottom_n_items)
+    """
+    # Calculate total revenue per menu item
+    item_revenue = df.groupby('menu_name')['revenue'].sum().sort_values(ascending=False)
+    
+    # Get top and bottom n items
+    top_n = item_revenue.head(n).index.tolist()
+    bottom_n = item_revenue.tail(n).index.tolist()
+    
+    return top_n, bottom_n
+
+def analyze_menu_combinations(df):
+    """
+    Analyze menu combinations and create three matrices:
+    - Top 20 vs Top 20
+    - Top 20 vs Bottom 20
+    - Bottom 20 vs Bottom 20
+    
+    Args:
+        df: Menu sales DataFrame
+        
+    Returns:
+        tuple: (top_vs_top, top_vs_bottom, bottom_vs_bottom)
+    """
+    # Get top and bottom items
+    top_20, bottom_20 = get_top_bottom_items(df, n=20)
+    
+    # Create matrices
+    top_vs_top = create_combination_matrix(df, top_20, top_20)
+    top_vs_bottom = create_combination_matrix(df, top_20, bottom_20)
+    bottom_vs_bottom = create_combination_matrix(df, bottom_20, bottom_20)
+    
+    return top_vs_top, top_vs_bottom, bottom_vs_bottom
 
 def calculate_group_metrics(df: pd.DataFrame) -> pd.DataFrame:
     """
