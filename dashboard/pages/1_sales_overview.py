@@ -83,20 +83,26 @@ pivot_data = hourly_patterns.pivot(
 day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 pivot_data = pivot_data.reindex(day_order)
 
-# Create heatmap
+# Calculate total counts per time slot for percentages
+total_transactions = hourly_patterns['count'].sum()
+hourly_patterns['percentage'] = (hourly_patterns['count'] / total_transactions * 100).round(1)
+
+# Create heatmap with updated hover template
 fig = go.Figure(data=go.Heatmap(
-    z=pivot_data.values,
-    x=[f"{h:02d}:00" for h in pivot_data.columns],
-    y=pivot_data.index,
-    colorscale='Blues',
-    hoverongaps=False,
+   z=pivot_data.values,
+   x=[f"{h:02d}:00" for h in pivot_data.columns],
+   y=pivot_data.index,
+   colorscale='Blues',
+   hoverongaps=False,
+   hovertemplate="Day: %{y}<br>Time: %{x}<br>Transactions: %{z}<br>Percentage: %{customdata:.1f}%<extra></extra>",
+   customdata=pivot_data.values / total_transactions * 100
 ))
 
 fig.update_layout(
-    title='Hourly Traffic Patterns by Day',
-    xaxis_title='Hour of Day',
-    yaxis_title='Day of Week',
-    height=400
+   title='Hourly Traffic Patterns by Day',
+   xaxis_title='Hour of Day',
+   yaxis_title='Day of Week',
+   height=400
 )
 
 st.plotly_chart(fig, use_container_width=True)
