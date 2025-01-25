@@ -42,20 +42,46 @@ date_range = st.sidebar.date_input(
 categories = ['All'] + get_categories()
 selected_category = st.sidebar.selectbox("Select Category", categories)
 
-# Load and filter data
+# Load base data
 @st.cache_data
-def load_filtered_menu_data(start_date, end_date, category):
+def load_base_menu_data(start_date, end_date, category):
     df = load_menu_data(start_date, end_date)
     if category != 'All':
         df = df[df['category'] == category]
     return df
 
-df = load_filtered_menu_data(date_range[0], date_range[1], selected_category)
+# Load initial data
+df = load_base_menu_data(date_range[0], date_range[1], selected_category)
 
-# Logging raw data issues
-# st.write("Debug: Raw data shape:", df.shape)
-# st.write("Debug: Data columns:", df.columns.tolist())
-# st.write("Debug: Non-null counts:\n", df.info())
+# Menu item filters
+st.sidebar.markdown("---")
+st.sidebar.subheader("Menu Item Filters")
+
+# Get unique menu items for filter
+all_menu_items = sorted(df['menu_name'].unique().tolist())
+
+# Custom item exclusion
+excluded_items = st.sidebar.multiselect(
+    "Exclude Specific Items",
+    options=all_menu_items,
+    default=['ข้าวเหนียว ขาว','น้ำเปล่า'],
+    help="Select items to exclude from analysis"
+)
+
+# Minimum order threshold
+min_order_count = st.sidebar.number_input(
+    "Minimum Order Count",
+    min_value=1,
+    max_value=1000,
+    value=10,
+    help="Only include items ordered at least this many times"
+)
+
+# Apply filters
+df = df[~df['menu_name'].isin(excluded_items)]
+order_counts = df.groupby('menu_name')['quantity'].sum()
+valid_items = order_counts[order_counts >= min_order_count].index
+df = df[df['menu_name'].isin(valid_items)]
 
 # Top-level metrics
 col1, col2, col3, col4 = st.columns(4)
@@ -98,11 +124,6 @@ with col4:
 
 # Menu Performance Analysis
 st.header("Menu Performance Analysis")
-
-# Logging Menu issues
-# menu_perf = analyze_menu_performance(df)
-# st.write("Debug: Menu performance shape:", menu_perf.shape)
-# st.write("Debug: Menu performance columns:", menu_perf.columns.tolist())
 
 tab1, tab2, tab3 = st.tabs(["Top Items", "Category Analysis", "Trend Analysis"])
 
@@ -158,11 +179,7 @@ with tab1:
 with tab2:
     # Load category summary
     cat_summary = load_category_summary()
-
-    # Logging category summary
-    # st.write("Debug: Category summary shape:", cat_summary.shape)
-    # st.write("Debug: Category summary columns:", cat_summary.columns.tolist())
-
+    
     # Create treemap
     fig = px.treemap(
         cat_summary,
