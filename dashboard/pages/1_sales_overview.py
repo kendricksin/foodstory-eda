@@ -62,6 +62,45 @@ def load_filtered_data(start_date, end_date):
 
 df = load_filtered_data(date_range[0], date_range[1])
 
+# After title and before metrics
+st.header("Hourly Traffic Analysis")
+
+# Create day and hour columns first
+df['day'] = df['datetime'].dt.strftime('%A')
+df['hour'] = df['datetime'].dt.hour
+
+# Now group using the new columns
+hourly_patterns = df.groupby(['day', 'hour']).size().reset_index(name='count')
+
+# Pivot data for heatmap
+pivot_data = hourly_patterns.pivot(
+    index='day', 
+    columns='hour',
+    values='count'
+)
+
+# Set custom day order
+day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+pivot_data = pivot_data.reindex(day_order)
+
+# Create heatmap
+fig = go.Figure(data=go.Heatmap(
+    z=pivot_data.values,
+    x=[f"{h:02d}:00" for h in pivot_data.columns],
+    y=pivot_data.index,
+    colorscale='Blues',
+    hoverongaps=False,
+))
+
+fig.update_layout(
+    title='Hourly Traffic Patterns by Day',
+    xaxis_title='Hour of Day',
+    yaxis_title='Day of Week',
+    height=400
+)
+
+st.plotly_chart(fig, use_container_width=True)
+
 # Calculate key metrics
 metrics = calculate_key_metrics(df)
 
